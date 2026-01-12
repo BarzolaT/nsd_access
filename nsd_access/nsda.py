@@ -8,27 +8,28 @@ from pandas import json_normalize
 from tqdm import tqdm
 import h5py
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 import urllib.request
 import zipfile
 from pycocotools.coco import COCO
 from nsdcode import NSDmapdata
 
-from IPython import embed
 
-from nsdcode import NSDmapdata
-
-
-class NSDAccess(object):
+class NSDAccess:
     """
-    Little class that provides easy access to the NSD data, see [http://naturalscenesdataset.org](their website)
+    Class that provides easy access to the NSD data
     """
 
     def __init__(self, nsd_folder, nsd_write_folder=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        """
+        Manager of nsd folder paths, in case nsd_folder has no writing access use
+        nsd_write_folder to write new files.
+        Args:
+            nsd_folder (str or path): Path to nsd data
+            nsd_write_folder (str or path): Path to write new files (default to nsd_folder)
+        """
         self.nsd_folder = nsd_folder
-        self.nsd_write_folder = nsd_write_folder if nsd_write_folder is not None else nsd_folder # in case we don't have write access to the main nsd_folder loc, we can use this for certain new files
+        self.nsd_write_folder = nsd_write_folder if nsd_write_folder is not None else nsd_folder
         self.nsddata_folder = op.join(self.nsd_folder, 'nsddata')
         self.ppdata_folder = op.join(self.nsd_folder, 'nsddata', 'ppdata')
         self.nsddata_betas_folder = op.join(
@@ -130,7 +131,7 @@ class NSDAccess(object):
                               subject, data_format, data_type)
         si_str = str(session_index).zfill(2)
 
-        if type(mask) == np.ndarray:  # will use the mat file iff exists, otherwise boom!
+        if isinstance(mask, np.ndarray):  # will use the mat file iff exists, otherwise boom!
             ipf = op.join(data_folder, f'betas_session{si_str}.mat')
             assert op.isfile(ipf), \
                 'Error: ' + ipf + ' not available for masking. You may need to download these separately.'
@@ -179,7 +180,7 @@ class NSDAccess(object):
         -------
         numpy.ndarray, 2D (fsaverage) or 4D (other data formats)
             the requested mapper values
-        """            
+        """
         if data_format == 'fsaverage':
             try:
                 # use pre-mapped results
@@ -187,7 +188,7 @@ class NSDAccess(object):
                     nb.load(f'{self.nsd_folder}/../NSD_floc_fsaverage/{subject}/fsaverage/lh.{mapper}_{data_type}.mgz').get_fdata(),
                     nb.load(f'{self.nsd_folder}/../NSD_floc_fsaverage/{subject}/fsaverage/rh.{mapper}_{data_type}.mgz').get_fdata()
                 ), 0)
-            except:
+            except Exception:
                 # do the mapping on the fly
                 mapper_obj = NSDmapdata(self.nsd_folder)
                 native_data = self.read_mapper_results(subject, mapper=mapper, data_type=data_type, data_format='nativesurf')
@@ -240,8 +241,8 @@ class NSDAccess(object):
         if atlas[:3] in ('rh.', 'lh.'):
             atlas_name = atlas[3:]
 
-        mapp_df = pd.read_csv(os.path.join(self.nsddata_folder, 'freesurfer',  subject,
-                            'label', f'{atlas_name}.mgz.ctab'), delimiter=' ', header=None, index_col=0)
+        mapp_df = pd.read_csv(os.path.join(self.nsddata_folder, 'freesurfer', subject,
+                                           'label', f'{atlas_name}.mgz.ctab'), delimiter=' ', header=None, index_col=0)
 
         atlas_mapping = mapp_df.to_dict()[1]
         # dict((y,x) for x,y in atlas_mapping.iteritems())
@@ -260,9 +261,9 @@ class NSDAccess(object):
                     if data_format == 'fsaverage':
                         mapper_obj = NSDmapdata(self.nsd_folder)
                         hdata, _ = self.read_atlas_results(subject, atlas=f'{hemi}.{atlas}', data_format='nativesurf')
-                        hdata = mapper_obj.fit(int(subject[-1]), 
-                                                f'{hemi}.white', 
-                                                data_format, hdata)
+                        hdata = mapper_obj.fit(int(subject[-1]),
+                                               f'{hemi}.white',
+                                               data_format, hdata)
                     else:
                         hdata = nb.load(op.join(
                             self.nsddata_folder, 'freesurfer', subject, 'label', f'{hemi}.{atlas}.mgz')).get_fdata()
@@ -364,7 +365,7 @@ class NSDAccess(object):
         sdataset = sf.get('imgBrick')
         if show:
             f, ss = plt.subplots(1, len(image_index),
-                                 figsize=(6*len(image_index), 6))
+                                 figsize=(6 * len(image_index), 6))
             if len(image_index) == 1:
                 ss = [ss]
             for s, d in zip(ss, sdataset[image_index]):
@@ -463,7 +464,7 @@ class NSDAccess(object):
 
     def read_image_coco_category(self, image_index):
         """image_coco_category returns the coco category of a single image or a list of images
-        
+
         Args:
             image_index ([list of integers]):  which images indexed in the 73k format to return
                                                the category for
@@ -506,14 +507,14 @@ class NSDAccess(object):
 
             cat_ids = coco.getCatIds()
             categories = json_normalize(coco.loadCats(cat_ids))
-            
+
             coco_cats = []
             coco_supercats = []
             for cat_id in cat_ids:
                 this_img_list = coco.getImgIds(catIds=[cat_id])
                 if coco_id in this_img_list:
-                    this_cat = np.asarray(categories[categories['id']==cat_id]['name'])[0]
-                    this_supercat = np.asarray(categories[categories['id']==cat_id]['supercategory'])[0]
+                    this_cat = np.asarray(categories[categories['id'] == cat_id]['name'])[0]
+                    this_supercat = np.asarray(categories[categories['id'] == cat_id]['supercategory'])[0]
                     coco_cats.append(this_cat)
                     coco_supercats.append(this_supercat)
 
@@ -546,17 +547,17 @@ class NSDAccess(object):
                     for cat_id in cat_ids_train:
                         this_img_list = coco_train.getImgIds(catIds=[cat_id])
                         if coco_id in this_img_list:
-                            this_cat = np.asarray(categories_train[categories_train['id']==cat_id]['name'])[0]
-                            this_supercat = np.asarray(categories_train[categories_train['id']==cat_id]['supercategory'])[0]
+                            this_cat = np.asarray(categories_train[categories_train['id'] == cat_id]['name'])[0]
+                            this_supercat = np.asarray(categories_train[categories_train['id'] == cat_id]['supercategory'])[0]
                             image_cat.append(this_cat)
                             image_supercat.append(this_supercat)
-                
+
                 elif subj_info['cocoSplit'] == 'val2017':
                     for cat_id in cat_ids_val:
                         this_img_list = coco_val.getImgIds(catIds=[cat_id])
                         if coco_id in this_img_list:
-                            this_cat = np.asarray(categories_val[categories_val['id']==cat_id]['name'])[0]
-                            this_supercat = np.asarray(categories_val[categories_val['id']==cat_id]['supercategory'])[0]
+                            this_cat = np.asarray(categories_val[categories_val['id'] == cat_id]['name'])[0]
+                            this_supercat = np.asarray(categories_val[categories_val['id'] == cat_id]['supercategory'])[0]
                             image_cat.append(this_cat)
                             image_supercat.append(this_supercat)
                 coco_cats.append(image_cat)

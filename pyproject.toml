@@ -36,7 +36,7 @@ classifiers = [
 "Environment :: Console",
 "Intended Audience :: Science/Research",
 "License :: OSI Approved :: MIT License",
-"Operating System :: OS Independent",
+"Operating System :: Linux",
 "Programming Language :: Python",
 "Topic :: Scientific/Engineering"
 ]
