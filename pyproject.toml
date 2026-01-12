@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=6.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nsd_access"
+version = "0.0.1"
+description = "NSDAccess: Access Natural Scenes Data."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+
+authors = [
+    { name = "Tomas Knapen", email="tknapen@gmail.com" }
+]
+
+maintainers = [
+    { name = "Nicholas Blauch"}
+    { name = "Thomas Barzola", email="thomas.hild@idor.org" }
+]
+
+dependencies = [
+    'numpy>=1.19.0',
+    'nibabel>=3.2.0',
+    'pycocotools>=2.0.6',
+    'nilearn>=0.10.0',
+    'h5py>=3.1.0',
+    'pandas>=1.1.0',
+    'tqdm>=4.40.0',
+    'matplotlib>=3.1.0',
+    'nsdcode'
+]
+
+classifiers = [
+"Development Status :: 3 - Alpha",
+"Environment :: Console",
+"Intended Audience :: Science/Research",
+"License :: OSI Approved :: MIT License",
+"Operating System :: OS Independent",
+"Programming Language :: Python",
+"Topic :: Scientific/Engineering"
+]
+
+
+[project.optional-dependencies]
+dev = [
+"ruff>=0.0.319",
+"flake8>=6.0"
+]
+
+[project.urls]
+Homepage = 'https://github.com/BarzolaT/nsd_access'
+ForkedFrom = 'https://github.com/nblauch/nsd_access'
+
+
+[tool.ruff]
+line-length = 88
+ignore = ["E501", "E702", "W504"]
+
+[tool.flake8]
+max-line-length = 88
+ignore = ["E501", "E702", "W504"]
+

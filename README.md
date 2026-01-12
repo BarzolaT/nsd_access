@@ -1,5 +1,7 @@
 # nsd_access
 
+This project is forked from [this project](https://github.com/nblauch/nsd_access) which is a fork from [the original nsd_access project](https://github.com/tknapen/nsd_access). It is updated and maintained to be up-to-date with the latest PEP standards.
+
 This package provides a single class (`NSDAccess`) allowing the user to quickly and easily access the data from the Natural Scenes Dataset.
 
 It provides, in arbitrary volume or surface-based formats:
@@ -10,9 +12,4 @@ It provides, in arbitrary volume or surface-based formats:
 - one-line access to the COCO annotations of all images in the dataset.
 
 
-For more information on this dataset and the project generating it, see [the NSD project website](http://naturalscenesdataset.org)
-
-
-### Requirements
-
-Apart from the 'standard' nibabel, numpy, pandas and h5py, [pycocotools](https://github.com/cocodataset/cocoapi) needs to be installed.
+For more information on this dataet and the project generating it, see [the NSD project website](http://naturalscenesdataset.org)
