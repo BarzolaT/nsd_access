@@ -14,6 +14,8 @@ import zipfile
 from pycocotools.coco import COCO
 from nsdcode import NSDmapdata
 
+import utils as ut
+
 
 class NSDAccess:
     """
@@ -21,12 +23,16 @@ class NSDAccess:
     """
 
     def __init__(self, nsd_folder, nsd_write_folder=None, *args, **kwargs):
-        """
-        Manager of nsd folder paths, in case nsd_folder has no writing access use
-        nsd_write_folder to write new files.
-        Args:
-            nsd_folder (str or path): Path to nsd data
-            nsd_write_folder (str or path): Path to write new files (default to nsd_folder)
+        """ Manager of nsd folder paths
+
+        In case nsd_folder has no writing access use nsd_write_folder to write new files.
+
+        Parameters
+        ----------
+            nsd_folder: str
+                Path to nsd data
+            nsd_write_folder: str
+                Path to write new files (default to nsd_folder)
         """
         self.nsd_folder = nsd_folder
         self.nsd_write_folder = nsd_write_folder if nsd_write_folder is not None else nsd_folder
@@ -46,12 +52,13 @@ class NSDAccess:
             self.nsd_write_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'annotations', '{}_{}.json')
 
     def download_coco_annotation_file(self, url='http://images.cocodataset.org/annotations/annotations_trainval2017.zip'):
-        """download_coco_annotation_file downloads and extracts the relevant annotations files
+        """ Downloads and extracts the relevant annotations files
 
         Parameters
         ----------
         url : str, optional
-            url for zip file containing annotations, by default 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
+            url for zip file containing annotations.
+            By default 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
         """
         print('downloading annotations from {}'.format(url))
         filehandle, _ = urllib.request.urlretrieve(url)
@@ -60,7 +67,7 @@ class NSDAccess:
             op.split(self.coco_annotation_file)[0])[0])
 
     def affine_header(self, subject, data_format='func1pt8mm'):
-        """affine_header affine and header, for construction of Nifti image
+        """ Returns affine and header for construction of Nifti image
 
         Parameters
         ----------
@@ -83,7 +90,7 @@ class NSDAccess:
         return nii.affine, nii.header
 
     def read_vol_ppdata(self, subject, filename='brainmask', data_format='func1pt8mm'):
-        """load_brainmask, returns boolean brainmask for volumetric data formats
+        """ Returns boolean brainmask for volumetric data formats
 
         Parameters
         ----------
@@ -105,7 +112,7 @@ class NSDAccess:
         return nb.load(full_path).get_fdata()
 
     def read_betas(self, subject, session_index, trial_index=[], data_type='betas_fithrf_GLMdenoise_RR', data_format='fsaverage', mask=None):
-        """read_betas read betas from MRI files
+        """Read betas from MRI files.
 
         Parameters
         ----------
@@ -163,7 +170,7 @@ class NSDAccess:
         return out_data[..., trial_index]
 
     def read_mapper_results(self, subject, mapper='prf', data_type='tval', data_format='func1pt8mm'):
-        """read_mapper_results [summary]
+        """Read mapper values from MRI values
 
         Parameters
         ----------
@@ -310,36 +317,37 @@ class NSDAccess:
         else:  # this is the format which you can input into other functions, so this is the default
             return np.unique([op.split(f)[1].replace('lh.', '').replace('rh.', '').replace('.mgz', '').replace('.nii.gz', '') for f in atlas_files])
 
-    def read_behavior(self, subject, session_index, trial_index=[]):
-        """read_behavior [summary]
+    def read_behavior(self, subject, session_index=None, trial_index=None):
+        """Returns the behavior dataframe of the subject.
 
         Parameters
         ----------
-        subject : str
-            subject identifier, such as 'subj01'
-        session_index : int
-            which session, counting from 0
+        subject : str or int
+            subject identifier
+        session_index : int, optional
+            which session counting from 0, by default returns all sessions
         trial_index : list, optional
-            which trials from this session's behavior to return, by default [], which returns all trials
+            which trials from this session's behavior to return, by default returns all trials
 
         Returns
         -------
         pandas DataFrame
             DataFrame containing the behavioral information for the requested trials
         """
-
-        behavior = pd.read_csv(self.behavior_file.format(
-            subject=subject), delimiter='\t')
+        subject = ut.subject_identifier(subject)
+        behavior = pd.read_csv(
+            self.behavior_file.format(subject=subject),
+            delimiter='\t'
+        )
 
         # the behavior is encoded per run.
         # I'm now setting this function up so that it aligns with the timepoints in the fmri files,
         # i.e. using indexing per session, and not using the 'run' information.
-        session_behavior = behavior[behavior['SESSION'] == session_index]
-
-        if len(trial_index) == 0:
-            trial_index = slice(0, len(session_behavior))
-
-        return session_behavior.iloc[trial_index]
+        if session_index:
+            behavior = behavior[behavior['SESSION'] == session_index]
+        if trial_index:
+            return behavior.iloc[trial_index]
+        return behavior
 
     def read_images(self, image_index, show=False):
         """read_images reads a list of images, and returns their data
@@ -392,14 +400,14 @@ class NSDAccess:
         coco Annotation
             coco annotation, to be used in subsequent analysis steps
 
-                Example
-                -------
-                single image:
-                        ci = read_image_coco_info(
-                            [569], info_type='captions', show_annot=False, show_img=False)
-                list of images:
-                        ci = read_image_coco_info(
-                            [569, 2569], info_type='captions')
+        Example
+        -------
+        single image:
+                ci = read_image_coco_info(
+                    [569], info_type='captions', show_annot=False, show_img=False)
+        list of images:
+                ci = read_image_coco_info(
+                    [569, 2569], info_type='captions')
 
         """
         if not hasattr(self, 'stim_descriptions'):
