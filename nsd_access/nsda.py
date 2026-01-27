@@ -14,7 +14,7 @@ import zipfile
 from pycocotools.coco import COCO
 from nsdcode import NSDmapdata
 
-import utils as ut
+from behavior import behavior_handler
 
 
 class NSDAccess:
@@ -41,8 +41,7 @@ class NSDAccess:
         self.nsddata_betas_folder = op.join(
             self.nsd_folder, 'nsddata_betas', 'ppdata')
 
-        self.behavior_file = op.join(
-            self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
+        self.behavior = behavior_handler(self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
         self.stimuli_file = op.join(
             self.nsd_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'nsd_stimuli.hdf5')
         self.stimuli_description_file = op.join(
@@ -317,37 +316,6 @@ class NSDAccess:
         else:  # this is the format which you can input into other functions, so this is the default
             return np.unique([op.split(f)[1].replace('lh.', '').replace('rh.', '').replace('.mgz', '').replace('.nii.gz', '') for f in atlas_files])
 
-    def read_behavior(self, subject, session_index=None, trial_index=None):
-        """Returns the behavior dataframe of the subject.
-
-        Parameters
-        ----------
-        subject : str or int
-            subject identifier
-        session_index : int, optional
-            which session counting from 0, by default returns all sessions
-        trial_index : list, optional
-            which trials from this session's behavior to return, by default returns all trials
-
-        Returns
-        -------
-        pandas DataFrame
-            DataFrame containing the behavioral information for the requested trials
-        """
-        subject = ut.subject_identifier(subject)
-        behavior = pd.read_csv(
-            self.behavior_file.format(subject=subject),
-            delimiter='\t'
-        )
-
-        # the behavior is encoded per run.
-        # I'm now setting this function up so that it aligns with the timepoints in the fmri files,
-        # i.e. using indexing per session, and not using the 'run' information.
-        if session_index:
-            behavior = behavior[behavior['SESSION'] == session_index]
-        if trial_index:
-            return behavior.iloc[trial_index]
-        return behavior
 
     def read_images(self, image_index, show=False):
         """read_images reads a list of images, and returns their data
