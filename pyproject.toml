@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=6.1", "wheel"]
+requires = [
+    "setuptools>=61",
+    "wheel",
+    "numpy>=1.26.4"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -15,20 +19,18 @@ authors = [
 ]
 
 maintainers = [
-    { name = "Nicholas Blauch"}
+    { name = "Nicholas Blauch"}, 
     { name = "Thomas Barzola", email="thomas.hild@idor.org" }
 ]
 
 dependencies = [
-    'numpy>=1.19.0',
+    'numpy>=1.26.4',
     'nibabel>=3.2.0',
-    'pycocotools>=2.0.6',
-    'nilearn>=0.10.0',
-    'h5py>=3.1.0',
-    'pandas>=1.1.0',
+    'h5py>=3.9.0',
+    'pandas>=2.0',
     'tqdm>=4.40.0',
-    'matplotlib>=3.1.0',
-    'nsdcode'
+    'matplotlib>=3.8.0',
+    'nsdcode @ git+https://github.com/cvnlab/nsdcode.git@bfd36a5#egg=nsdcode'
 ]
 
 classifiers = [
@@ -41,6 +43,8 @@ classifiers = [
 "Topic :: Scientific/Engineering"
 ]
 
+[tool.setuptools.packages.find]
+where = ["nsd_access"]
 
 [project.optional-dependencies]
 dev = [
@@ -51,7 +55,6 @@ dev = [
 [project.urls]
 Homepage = 'https://github.com/BarzolaT/nsd_access'
 ForkedFrom = 'https://github.com/nblauch/nsd_access'
-
 
 [tool.ruff]
 line-length = 88

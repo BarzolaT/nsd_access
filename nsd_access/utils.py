@@ -36,3 +36,12 @@ def subject_identifier(subject):
         if subject > 8 or subject < 1:
             raise ValueError(f"Subject number {subject} does not exist")
         return f"subj0{subject}"
+
+def safe_coco_import():
+    try:
+        from pycocotools.coco import COCO
+    except ImportError as e:
+        raise RuntimeError(
+            "pycocotools is required for COCO functionality. "
+            "Install it separately."
+        ) from e

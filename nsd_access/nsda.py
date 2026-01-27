@@ -1,6 +1,8 @@
 import os
 import os.path as op
 import glob
+from pathlib import Path
+import logging
 import nibabel as nb
 import numpy as np
 import pandas as pd
@@ -9,12 +11,11 @@ from tqdm import tqdm
 import h5py
 import matplotlib.pyplot as plt
 
-import urllib.request
-import zipfile
-from pycocotools.coco import COCO
 from nsdcode import NSDmapdata
 
+import utils as ut
 from behavior import behavior_handler
+from downloader import nsd_downloader
 
 
 class NSDAccess:
@@ -44,26 +45,14 @@ class NSDAccess:
         self.behavior = behavior_handler(self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
         self.stimuli_file = op.join(
             self.nsd_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'nsd_stimuli.hdf5')
-        self.stimuli_description_file = op.join(
-            self.nsd_folder, 'nsddata', 'experiments', 'nsd', 'nsd_stim_info_merged.csv')
+        self.stimuli_description_file = Path(
+            self.nsd_folder,
+            'nsddata/experiments/nsd/nsd_stim_info_merged.csv'
+        )
 
         self.coco_annotation_file = op.join(
             self.nsd_write_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'annotations', '{}_{}.json')
-
-    def download_coco_annotation_file(self, url='http://images.cocodataset.org/annotations/annotations_trainval2017.zip'):
-        """ Downloads and extracts the relevant annotations files
-
-        Parameters
-        ----------
-        url : str, optional
-            url for zip file containing annotations.
-            By default 'http://images.cocodataset.org/annotations/annotations_trainval2017.zip'
-        """
-        print('downloading annotations from {}'.format(url))
-        filehandle, _ = urllib.request.urlretrieve(url)
-        zip_file_object = zipfile.ZipFile(filehandle, 'r')
-        zip_file_object.extractall(path=op.split(
-            op.split(self.coco_annotation_file)[0])[0])
+        self.downloader = nsd_downloader(self.coco_annotation_file)
 
     def affine_header(self, subject, data_format='func1pt8mm'):
         """ Returns affine and header for construction of Nifti image
@@ -316,7 +305,6 @@ class NSDAccess:
         else:  # this is the format which you can input into other functions, so this is the default
             return np.unique([op.split(f)[1].replace('lh.', '').replace('rh.', '').replace('.mgz', '').replace('.nii.gz', '') for f in atlas_files])
 
-
     def read_images(self, image_index, show=False):
         """read_images reads a list of images, and returns their data
 
@@ -349,93 +337,59 @@ class NSDAccess:
                 s.imshow(d)
         return sdataset[image_index]
 
-    def read_image_coco_info(self, image_index, info_type='captions', show_annot=False, show_img=False):
-        """image_coco_info returns the coco annotations of a single image or a list of images
+    def read_image_coco_info(self, image_index, info_type='captions'):
+        """Returns the coco annotations of a single image or a list of images
 
         Parameters
         ----------
         image_index : list of integers
             which images indexed in the 73k format to return the captions for
         info_type : str, optional
-            what type of annotation to return, from ['captions', 'person_keypoints', 'instances'], by default 'captions'
-        show_annot : bool, optional
-            whether to show the annotation, by default False
-        show_img : bool, optional
-            whether to show the image (from the nsd formatted data), by default False
+            what type of annotation to return, from ['captions', 'person_keypoints', 'instances'].
+            Default is 'captions'
 
         Returns
         -------
-        coco Annotation
-            coco annotation, to be used in subsequent analysis steps
+        coco Annotation: list of list of dict
+            in the order of image_index, list of size one dict with keys
+            id, imageid, and the info_type requested
 
         Example
         -------
-        single image:
-                ci = read_image_coco_info(
-                    [569], info_type='captions', show_annot=False, show_img=False)
-        list of images:
-                ci = read_image_coco_info(
-                    [569, 2569], info_type='captions')
+            ci = read_image_coco_info([569], info_type='captions')
+            ci = read_image_coco_info([569, 2569], info_type='instances')
 
         """
+        ut.safe_coco_import()
         if not hasattr(self, 'stim_descriptions'):
             self.stim_descriptions = pd.read_csv(
-                self.stimuli_description_file, index_col=0)
-        if len(image_index) == 1:
-            subj_info = self.stim_descriptions.iloc[image_index[0]]
+                self.stimuli_description_file,
+                index_col=0
+            )
 
-            # checking whether annotation file for this trial exists.
-            # This may not be the right place to call the download, and
-            # re-opening the annotations for all images separately may be slowing things down
-            # however images used in the experiment seem to have come from different sets.
-            annot_file = self.coco_annotation_file.format(
-                info_type, subj_info['cocoSplit'])
-            print('getting annotations from ' + annot_file)
-            if not os.path.isfile(annot_file):
-                print('annotations file not found')
-                self.download_coco_annotation_file()
+        coco_annot = []
+        # load train_2017
+        train_file = self.coco_annotation_file.format(
+            info_type, 'train2017')
+        val_file = self.coco_annotation_file.format(
+            info_type, 'val2017')
+        if not os.path.isfile(train_file) or not os.path.isfile(val_file):
+            raise RuntimeError('Annotations file not found, did you download it?')
+        coco_train = COCO(train_file)
+        coco_val = COCO(val_file)
+        for image in image_index:
+            subj_info = self.stim_descriptions.iloc[image]
+            if subj_info['cocoSplit'] == 'train2017':
+                coco_annot_IDs = coco_train.getAnnIds(
+                    [subj_info['cocoId']])
+                coco_ann = coco_train.loadAnns(coco_annot_IDs)
+                coco_annot.append(coco_ann)
 
-            coco = COCO(annot_file)
-            coco_annot_IDs = coco.getAnnIds([subj_info['cocoId']])
-            coco_annot = coco.loadAnns(coco_annot_IDs)
-
-            if show_img:
-                self.read_images(image_index, show=True)
-
-            if show_annot:
-                # still need to convert the annotations (especially person_keypoints and instances) to the right reference frame,
-                # because the images were cropped. See image information per image to do this.
-                coco.showAnns(coco_annot)
-
-        elif len(image_index) > 1:
-
-            # we output a list of annots
-            coco_annot = []
-
-            # load train_2017
-            annot_file = self.coco_annotation_file.format(
-                info_type, 'train2017')
-            coco_train = COCO(annot_file)
-
-            # also load the val 2017
-            annot_file = self.coco_annotation_file.format(
-                info_type, 'val2017')
-            coco_val = COCO(annot_file)
-
-            for image in image_index:
-                subj_info = self.stim_descriptions.iloc[image]
-                if subj_info['cocoSplit'] == 'train2017':
-                    coco_annot_IDs = coco_train.getAnnIds(
-                        [subj_info['cocoId']])
-                    coco_ann = coco_train.loadAnns(coco_annot_IDs)
-                    coco_annot.append(coco_ann)
-
-                elif subj_info['cocoSplit'] == 'val2017':
-                    coco_annot_IDs = coco_val.getAnnIds(
-                        [subj_info['cocoId']])
-                    coco_ann = coco_val.loadAnns(coco_annot_IDs)
-                    coco_annot.append(coco_ann)
-
+            elif subj_info['cocoSplit'] == 'val2017':
+                coco_annot_IDs = coco_val.getAnnIds(
+                    [subj_info['cocoId']])
+                coco_ann = coco_val.loadAnns(coco_annot_IDs)
+                coco_annot.append(coco_ann)
         return coco_annot
 
     def read_image_coco_category(self, image_index):
@@ -459,7 +413,7 @@ class NSDAccess:
                     ci = read_image_coco_category(
                         [569, 2569])
         """
-
+        ut.safe_coco_import()
         if not hasattr(self, 'stim_descriptions'):
             self.stim_descriptions = pd.read_csv(
                 self.stimuli_description_file, index_col=0)

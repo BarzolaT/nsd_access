@@ -4,8 +4,7 @@ import utils as ut
 
 
 class Behavior_handler:
-    """
-    Class to handle behavior files of NSD data
+    """ Class to handle behavior files of NSD data
     """
 
     def __init__(self, behavior_string):
@@ -13,8 +12,8 @@ class Behavior_handler:
 
         Parameters
         ----------
-            behavior_string: str
-                String to access behavior files, will be formatted to access each subject
+        behavior_string: str
+            String to access behavior files, will be formatted to access each subject
 
         """
         self.behavior_string = behavior_string
