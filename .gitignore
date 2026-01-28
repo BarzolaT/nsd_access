@@ -107,4 +107,4 @@ venv.bak/
 .vscode
 
 #pycoco install
-pycoco/*
+vendor/*
