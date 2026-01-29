@@ -12,12 +12,12 @@ def subject_identifier(subject):
         subject identifier or number
 
     Returns
-    ----------
+    -------
     str
         valid subject identifier in the format 'subjxx'
 
     Raises
-    ----------
+    ------
     ValueError
         If the string or int cannot be associated with a valid subject of the nsd dataset
     """
@@ -37,9 +37,23 @@ def subject_identifier(subject):
             raise ValueError(f"Subject number {subject} does not exist")
         return f"subj0{subject}"
 
+
 def safe_coco_import():
+    """Import COCO from pycocotools.coco
+
+    Returns
+    -------
+    pycocotools.coco COCO
+        COCO class
+
+    Raises
+    ------
+    RuntimeError
+        If pycocotools is not available
+    """
     try:
         from pycocotools.coco import COCO
+        return COCO
     except ImportError as e:
         raise RuntimeError(
             "pycocotools is required for COCO functionality. "

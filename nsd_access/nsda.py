@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 
 from nsdcode import NSDmapdata
 
-import utils as ut
-from behavior import behavior_handler
-from downloader import nsd_downloader
+from . import utils as ut
+from .behavior import behavior_handler
+from .downloader import nsd_downloader
 
 
 class NSDAccess:
@@ -42,7 +42,9 @@ class NSDAccess:
         self.nsddata_betas_folder = op.join(
             self.nsd_folder, 'nsddata_betas', 'ppdata')
 
-        self.behavior = behavior_handler(self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
+        self.behavior = behavior_handler(
+            op.join(self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
+        )
         self.stimuli_file = op.join(
             self.nsd_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'nsd_stimuli.hdf5')
         self.stimuli_description_file = Path(
@@ -350,17 +352,12 @@ class NSDAccess:
 
         Returns
         -------
-        coco Annotation: list of list of dict
-            in the order of image_index, list of size one dict with keys
+        coco Annotation: list of dict
+            in the order of image_index, list of dict with keys
             id, imageid, and the info_type requested
 
-        Example
-        -------
-            ci = read_image_coco_info([569], info_type='captions')
-            ci = read_image_coco_info([569, 2569], info_type='instances')
-
         """
-        ut.safe_coco_import()
+        COCO = ut.safe_coco_import()
         if not hasattr(self, 'stim_descriptions'):
             self.stim_descriptions = pd.read_csv(
                 self.stimuli_description_file,
@@ -384,7 +381,6 @@ class NSDAccess:
                     [subj_info['cocoId']])
                 coco_ann = coco_train.loadAnns(coco_annot_IDs)
                 coco_annot.append(coco_ann)
-
             elif subj_info['cocoSplit'] == 'val2017':
                 coco_annot_IDs = coco_val.getAnnIds(
                     [subj_info['cocoId']])
@@ -413,7 +409,7 @@ class NSDAccess:
                     ci = read_image_coco_category(
                         [569, 2569])
         """
-        ut.safe_coco_import()
+        COCO = ut.safe_coco_import()
         if not hasattr(self, 'stim_descriptions'):
             self.stim_descriptions = pd.read_csv(
                 self.stimuli_description_file, index_col=0)

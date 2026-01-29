@@ -1,9 +1,9 @@
 import pandas as pd
 
-import utils as ut
+from . import utils as ut
 
 
-class Behavior_handler:
+class behavior_handler:
     """ Class to handle behavior files of NSD data
     """
 
@@ -18,7 +18,7 @@ class Behavior_handler:
         """
         self.behavior_string = behavior_string
 
-    def read_behavior(self, subject, session_index=None, trial_index=None):
+    def read_behavior_file(self, subject, session_index=None, trial_index=None):
         """Returns the behavior dataframe of the subject.
 
         Parameters
@@ -73,6 +73,6 @@ class Behavior_handler:
         valid_image_map = {}
         for image_id, locations in image_map.items():
             count = len(locations)
-            if count > n_repeat:
+            if count >= n_repeat:
                 valid_image_map[image_id] = locations
         return valid_image_map
