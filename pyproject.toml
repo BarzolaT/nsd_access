@@ -30,6 +30,7 @@ dependencies = [
     'pandas>=2.0',
     'tqdm>=4.40.0',
     'matplotlib>=3.8.0',
+    'cython>=3.2.4'
     'nsdcode @ git+https://github.com/cvnlab/nsdcode.git@bfd36a5#egg=nsdcode'
 ]
 
@@ -43,8 +44,8 @@ classifiers = [
 "Topic :: Scientific/Engineering"
 ]
 
-[tool.setuptools.packages.find]
-where = ["nsd_access"]
+[tool.setuptools]
+packages = ['nsd_access']
 
 [project.optional-dependencies]
 dev = [
