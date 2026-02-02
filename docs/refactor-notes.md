@@ -43,7 +43,8 @@ ValueError: Subject number 10 does not exist
 
 ## get_repeated_conditions
 
-Added because it is used most nsd-related project. 
++ Added because it is used most nsd-related project. 
++ I use the 73KID - 1 as identifier to be consistent with the NSDid.
 
 
 # Downloader

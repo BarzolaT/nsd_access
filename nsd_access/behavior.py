@@ -64,7 +64,7 @@ class behavior_handler:
         image_map = {}
         # iterate over the rows of the dataframe
         for index, row in behavior.iterrows():
-            current_image = int(row['73KID'])
+            current_image = int(row['73KID']) - 1
             current_location = (int(row['SESSION']), int(row['TRIAL']))
             if current_image not in image_map:
                 image_map[current_image] = []
