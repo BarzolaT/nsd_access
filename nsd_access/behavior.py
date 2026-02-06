@@ -76,3 +76,14 @@ class behavior_handler:
             if count >= n_repeat:
                 valid_image_map[image_id] = locations
         return valid_image_map
+
+    def get_515_index(self):
+        """
+        Return the index of the 515 images that where seen by all subject.
+        Returns:
+            List: list of 73KID of the 515 images 
+        """
+        # Load the repeated_conditions of each subject.
+        # Merge them
+        # return as list
+

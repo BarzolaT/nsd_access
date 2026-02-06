@@ -2,7 +2,6 @@ import os
 import os.path as op
 import glob
 from pathlib import Path
-import logging
 import nibabel as nb
 import numpy as np
 import pandas as pd
@@ -39,8 +38,10 @@ class NSDAccess:
         self.nsd_write_folder = nsd_write_folder if nsd_write_folder is not None else nsd_folder
         self.nsddata_folder = op.join(self.nsd_folder, 'nsddata')
         self.ppdata_folder = op.join(self.nsd_folder, 'nsddata', 'ppdata')
-        self.nsddata_betas_folder = op.join(
-            self.nsd_folder, 'nsddata_betas', 'ppdata')
+        self.nsddata_betas_folder = Path(
+            self.nsd_folder,
+            'nsddata_betas/ppdata'
+        )
 
         self.behavior = behavior_handler(
             op.join(self.ppdata_folder, '{subject}', 'behav', 'responses.tsv')
@@ -49,7 +50,7 @@ class NSDAccess:
             self.nsd_folder, 'nsddata_stimuli', 'stimuli', 'nsd', 'nsd_stimuli.hdf5')
         self.stimuli_description_file = Path(
             self.nsd_folder,
-            'nsddata/experiments/nsd/nsd_stim_info_merged.csv'
+            'nsddata', 'experiments', 'nsd', 'nsd_stim_info_merged.csv'
         )
 
         self.coco_annotation_file = op.join(
@@ -124,20 +125,25 @@ class NSDAccess:
         numpy.ndarray, 2D (fsaverage) or 4D (other data formats)
             the requested per-trial beta values
         """
-        data_folder = op.join(self.nsddata_betas_folder,
-                              subject, data_format, data_type)
+        subject = ut.subject_identifier(subject)
+        data_folder = (
+            self.nsddata_betas_folder /
+            subject / data_format / data_type
+        )
         si_str = str(session_index).zfill(2)
 
         if isinstance(mask, np.ndarray):  # will use the mat file iff exists, otherwise boom!
-            ipf = op.join(data_folder, f'betas_session{si_str}.mat')
-            assert op.isfile(ipf), \
-                'Error: ' + ipf + ' not available for masking. You may need to download these separately.'
+            ipf = data_folder / f'betas_session{si_str}.mat'
+            if not ipf.is_file():
+                raise FileNotFoundError(
+                    '{ipf} not available for masking. You may need to download these separately.'
+                )
             # will do indexing of both space and time in one go for this option,
             # so will return results immediately from this
             h5 = h5py.File(ipf, 'r')
             betas = h5.get('betas')
             # embed()
-            if len(trial_index) == 0:
+            if isinstance(trial_index, list) and len(trial_index) == 0:
                 trial_index = slice(0, betas.shape[0])
             # this isn't finished yet - binary masks cannot be used for indexing like this
             return betas[trial_index, np.nonzero(mask)]
@@ -145,16 +151,18 @@ class NSDAccess:
         if data_format == 'fsaverage':
             session_betas = []
             for hemi in ['lh', 'rh']:
-                hdata = nb.load(op.join(
-                    data_folder, f'{hemi}.betas_session{si_str}.mgh')).get_fdata()
+                hdata = nb.load(
+                    data_folder / f'{hemi}.betas_session{si_str}.mgh'
+                ).get_fdata()
                 session_betas.append(hdata)
             out_data = np.squeeze(np.vstack(session_betas))
         else:
             # if no mask was specified, we'll use the nifti image
             out_data = nb.load(
-                op.join(data_folder, f'betas_session{si_str}.nii.gz')).get_fdata()
+                data_folder / f'betas_session{si_str}.nii.gz'
+            ).get_fdata()
 
-        if len(trial_index) == 0:
+        if isinstance(trial_index, list) and len(trial_index) == 0:
             trial_index = slice(0, out_data.shape[-1])
 
         return out_data[..., trial_index]
