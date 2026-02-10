@@ -382,7 +382,8 @@ class NSDAccess:
             raise RuntimeError('Annotations file not found, did you download it?')
         coco_train = COCO(train_file)
         coco_val = COCO(val_file)
-        for image in image_index:
+        for kid in image_index:
+            image = kid - 1  # The NSDid is 73KID - 1
             subj_info = self.stim_descriptions.iloc[image]
             if subj_info['cocoSplit'] == 'train2017':
                 coco_annot_IDs = coco_train.getAnnIds(

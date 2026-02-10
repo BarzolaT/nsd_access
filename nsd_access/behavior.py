@@ -28,7 +28,7 @@ class behavior_handler:
         session_index : int, optional
             which session counting from 0, by default returns all sessions
         trial_index : list, optional
-            which trials from this session's behavior to return, by default returns all trials
+           which trials from this session's behavior to return, by default returns all trials
 
         Returns
         -------
@@ -57,25 +57,11 @@ class behavior_handler:
             subject (int or str): identifier of the subject between
             n_repeat (int): the number of times to be seen to be considered valid
         Returns:
-            valid_image_map (dict): {73KID: list[sessions, trial]} if they are valid observations
+            repeated_images (list): List of the 73KID images that were seen n_repeat times
         """
         behavior = self.read_behavior_file(subject)
-        # Create a dit that map each image, to where it has been seen (session, trial)
-        image_map = {}
-        # iterate over the rows of the dataframe
-        for index, row in behavior.iterrows():
-            current_image = int(row['73KID']) - 1
-            current_location = (int(row['SESSION']), int(row['TRIAL']))
-            if current_image not in image_map:
-                image_map[current_image] = []
-            if current_location not in image_map[current_image]:
-                image_map[current_image].append(current_location)
-        valid_image_map = {}
-        for image_id, locations in image_map.items():
-            count = len(locations)
-            if count >= n_repeat:
-                valid_image_map[image_id] = locations
-        return valid_image_map
+        result = behavior['73KID'].value_counts()[behavior['73KID'].value_counts() >= n_repeat].index.tolist()
+        return result
 
     def get_515_index(self):
         """
