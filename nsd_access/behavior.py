@@ -63,13 +63,17 @@ class behavior_handler:
         result = behavior['73KID'].value_counts()[behavior['73KID'].value_counts() >= n_repeat].index.tolist()
         return result
 
-    def get_515_index(self):
+    def get_515_condition(self):
         """
         Return the index of the 515 images that where seen by all subject.
         Returns:
-            List: list of 73KID of the 515 images 
+            List: list of 73KID of the 515 images
         """
-        # Load the repeated_conditions of each subject.
-        # Merge them
-        # return as list
-
+        result = None
+        for subject in range(1, 9):
+            rep = set(self.get_repeated_conditions(subject, n_repeat=3))
+            if not result:
+                result = rep
+            else:
+                result = result & rep
+        return list(result)
